@@ -1,0 +1,10 @@
+julia 0.6
+Compat 1.0+
+BinDeps  0.8.10
+Discreet
+Distributions 0.15.0
+Optim 0.15+
+PDMats 0.8.0
+Roots 0.6.0
+StatsBase 0.23.1
+StatsFuns 0.6.1

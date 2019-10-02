@@ -1,0 +1,35 @@
+## Documentation: http://docs.travis-ci.com/user/languages/julia/
+language: julia
+os:
+  - linux
+  - osx
+julia:
+  - 0.6
+  - 0.7
+  - nightly
+notifications:
+  email: false
+git:
+  depth: 99999999
+
+## uncomment the following lines to allow failures on nightly julia
+## (tests will run but not make your overall status red)
+matrix:
+ allow_failures:
+ - julia: nightly
+
+addons:
+  apt: # apt-get for linux
+    packages:
+    - gfortran
+before_script: # homebrew for mac
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew install gcc; fi
+
+script:
+ - julia -e 'VERSION >= v"0.7-" && using Pkg; Pkg.clone("https://github.com/cynddl/Discreet.jl.git")'
+ - julia -e 'VERSION >= v"0.7-" && using Pkg; Pkg.clone(pwd()); Pkg.build("CorrectMatch"); Pkg.test("CorrectMatch"; coverage=true)'
+after_success:
+  # push coverage results to Coveralls
+  - julia -e 'VERSION >= v"0.7-" && using Pkg; cd(Pkg.dir("CorrectMatch")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  # push coverage results to Codecov
+  - julia -e 'VERSION >= v"0.7-" && using Pkg; cd(Pkg.dir("CorrectMatch")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
