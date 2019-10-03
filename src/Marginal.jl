@@ -29,7 +29,7 @@ export fit_histogram, extract_marginal, number_bins
 ### Utils
 
 function number_bins(d::Distribution)
-  isa(d, Categorical) && return d.K
+  isa(d, Categorical) && return ncategories(d)
   typemax(Int)
 end
 

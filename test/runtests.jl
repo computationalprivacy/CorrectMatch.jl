@@ -51,7 +51,7 @@ end
 @testset "Marginals" begin
     d = fit_histogram([10, 10, 10, 10, 10])
     @test isa(d, Categorical)
-    @test d.p == [.2, .2, .2, .2, .2]
+    @test probs(d) == [.2, .2, .2, .2, .2]
 
     d = fit_histogram([721, 180, 60, 23, 9, 4, 2, 1])
     @test isa(d, Marginal.Logarithmic)
@@ -63,15 +63,15 @@ end
     G = fit(GaussianCopula, data)
     @test isa(G, GaussianCopula)
     @test G.Σ.mat ≈ diagm(0 => ones(3)) atol=1e-3  # doesn't matter, for regression
-    @test G.marginals[1].K == 1
-    @test G.marginals[1].p ≈ [1.]
+    @test ncategories(G.marginals[1]) == 1
+    @test probs(G.marginals[1]) ≈ [1.]
     @test rand(G, 4) == data
 
 
     data = [1 2 3; 3 4 5; 6 7 9; 9 10 11]
     G = fit_mle(GaussianCopula, data; exact_marginal=true)
     @test G.Σ.mat ≈ diagm(0 => ones(3)) atol=1e-3
-    @test G.marginals[1].p == G.marginals[1].p == G.marginals[1].p
+    @test probs(G.marginals[1]) == probs(G.marginals[2]) == probs(G.marginals[3])
 end
 
 
