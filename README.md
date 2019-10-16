@@ -1,6 +1,6 @@
 # CorrectMatch
 
-[![Build Status](https://travis-ci.com/computationalprivacy/CorrectMatch.jl.svg?token=WSNpyq8Yfvx9sH89wp9U&branch=master)](https://travis-ci.com/computationalprivacy/CorrectMatch.jl)
+[![Build Status](https://travis-ci.org/computationalprivacy/CorrectMatch.jl.svg)](https://travis-ci.org/computationalprivacy/CorrectMatch.jl)
 
 
 ## Installation

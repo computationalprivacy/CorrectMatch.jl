@@ -4,8 +4,9 @@ os:
   - linux
   - osx
 julia:
-  - 0.6
-  - 0.7
+  - 1.0
+  - 1.1
+  - 1.2
   - nightly
 notifications:
   email: false
@@ -23,13 +24,8 @@ addons:
     packages:
     - gfortran
 before_script: # homebrew for mac
-  - if [ $TRAVIS_OS_NAME = osx ]; then brew install gcc; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew update-reset; brew install gcc; fi
 
-script:
- - julia -e 'VERSION >= v"0.7-" && using Pkg; Pkg.clone("https://github.com/cynddl/Discreet.jl.git")'
- - julia -e 'VERSION >= v"0.7-" && using Pkg; Pkg.clone(pwd()); Pkg.build("CorrectMatch"); Pkg.test("CorrectMatch"; coverage=true)'
 after_success:
-  # push coverage results to Coveralls
-  - julia -e 'VERSION >= v"0.7-" && using Pkg; cd(Pkg.dir("CorrectMatch")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
-  # push coverage results to Codecov
-  - julia -e 'VERSION >= v"0.7-" && using Pkg; cd(Pkg.dir("CorrectMatch")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())';
+
