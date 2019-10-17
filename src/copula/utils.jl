@@ -18,6 +18,7 @@
 
 using Compat.Pkg
 using Compat: Cvoid
+import CorrectMatch
 
 """
 Call the Fortran 'mvndst' routine to integrate multivariate Gaussian
@@ -46,7 +47,7 @@ function call_mvndst(lo::Vector{Float64}, hi::Vector{Float64}, corr_mat; kwargs.
     mvndst(lo, hi, infin, flat_corr; kwargs...)
 end
 
-const mvndstlib = Pkg.dir("CorrectMatch", "deps", "builds", "mvndst")
+const mvndstlib = joinpath(dirname(pathof(CorrectMatch)), "..", "deps", "builds", "mvndst")
 
 function mvndst(lower::Vector{Float64}, upper::Vector{Float64},
                 infin::Vector{Int}, correl::Vector{Float64};

@@ -1,6 +1,6 @@
 name = "CorrectMatch"
 uuid = "26fcc630-e5d3-11e9-1f2e-33567d4860bc"
-version = "0.1.0"
+version = "1.0.0"
 
 [deps]
 BinDeps = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
@@ -15,3 +15,12 @@ StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 
 [compat]
 julia = "1"
+BinDeps = "0.8"
+Compat = "2.2"
+Discreet = "0.3"
+Distributions = "0.21"
+Optim = "0.19"
+PDMats = "0.9"
+Roots = "0.8"
+StatsBase = "0.32"
+StatsFuns = "0.8"
