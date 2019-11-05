@@ -90,6 +90,8 @@ function _fit_mle_mi_matrix(d::Type{GaussianCopula},
   # is diagonal and that every eigenvalue is positive
   B = corr_up + corr_up' + diagm(0 => ones(M))
   D, V = eigvals(B), eigvecs(B) # diagonalize B
-  corr_mat_fixed = V * diagm(0 => max.(D, 1e-10)) * V'  # better than eps(Float64)
+  corr_mat_fixed = V * diagm(0 => max.(D, 1e-10)) * V' # better than eps(Float64)
+  # Numerical floating-point errors can make the matrix non-Hermitian
+  corr_mat_fixed = (corr_mat_fixed + corr_mat_fixed') / 2
   GaussianCopula(PDMat(corr_mat_fixed), marginals)
 end
