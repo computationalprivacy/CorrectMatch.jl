@@ -9,13 +9,21 @@ jobs:
       matrix:
         julia-version: ['1.6', '1.7']
         julia-arch: [x64, x86]
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         exclude:
           - os: macOS-latest
             julia-arch: x86
 
     steps:
       - uses: actions/checkout@v2
+
+      - name: Install GFortran macOS
+        if: contains(matrix.os, 'macos')
+        run: |
+          ln -s /usr/local/bin/gfortran-9 /usr/local/bin/gfortran
+          which gfortran-9
+          which gfortran
+
       - uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.julia-version }}
