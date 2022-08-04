@@ -47,8 +47,6 @@ function call_mvndst(lo::Vector{Float64}, hi::Vector{Float64}, corr_mat; kwargs.
     mvndst(lo, hi, infin, flat_corr; kwargs...)
 end
 
-const mvndstlib = joinpath(dirname(pathof(CorrectMatch)), "..", "deps", "builds", "mvndst")
-
 function mvndst(lower::Vector{Float64}, upper::Vector{Float64},
                 infin::Vector{Int}, correl::Vector{Float64};
                 maxpts::Int=2000,
@@ -59,7 +57,7 @@ function mvndst(lower::Vector{Float64}, upper::Vector{Float64},
     @assert (n*(n-1)/2) == length(correl)
 
     err, value, inform = Ref(1.), Ref(1.), Ref(1)
-    ccall((:mvndst_, mvndstlib), Cvoid,
+        ((:mvndst_, libmvndst), Cvoid,
         (Ref{Int}, Ptr{Float64}, Ptr{Float64}, Ptr{Int}, Ptr{Float64}, Ref{Int}, Ref{Float64}, Ref{Float64}, Ref{Float64}, Ref{Float64}, Ref{Int}),
         n, lower, upper, infin, correl, maxpts, abseps, releps, err, value, inform)
 
