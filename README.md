@@ -1,6 +1,6 @@
 # CorrectMatch
 
-[![Build Status](https://travis-ci.org/computationalprivacy/CorrectMatch.jl.svg)](https://travis-ci.org/computationalprivacy/CorrectMatch.jl)
+[![Build status](https://github.com/computationalprivacy/CorrectMatch.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/computationalprivacy/CorrectMatch.jl/actions/workflows/CI.yml)
 
 
 ## Installation
