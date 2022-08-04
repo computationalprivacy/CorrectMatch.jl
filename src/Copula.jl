@@ -21,6 +21,7 @@ module Copula
 using ..Marginal
 using Distributions, PDMats, StatsBase, StatsFuns, Roots
 using Discreet
+using mvndst_jll
 
 using Compat.LinearAlgebra
 using Compat: undef
