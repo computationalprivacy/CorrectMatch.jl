@@ -57,7 +57,7 @@ function mvndst(lower::Vector{Float64}, upper::Vector{Float64},
     @assert (n*(n-1)/2) == length(correl)
 
     err, value, inform = Ref(1.), Ref(1.), Ref(1)
-        ((:mvndst_, libmvndst), Cvoid,
+    ccall((:mvndst_, libmvndst), Cvoid,
         (Ref{Int}, Ptr{Float64}, Ptr{Float64}, Ptr{Int}, Ptr{Float64}, Ref{Int}, Ref{Float64}, Ref{Float64}, Ref{Float64}, Ref{Float64}, Ref{Int}),
         n, lower, upper, infin, correl, maxpts, abseps, releps, err, value, inform)
 
