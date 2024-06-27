@@ -1,21 +1,42 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  - push
+  - pull_request
+
+env:
+  JULIA_CACHE: '1'
 
 jobs:
   test:
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        julia-version: ['1.6', '1.7']
-        julia-arch: [x64]
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
+        version:
+          - '1.6'
+          - '1'  # automatically expands to the latest stable 1.x release of Julia
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+        arch:
+          - x64
+          - x86
+        exclude:
+          - os: macOS-latest
+            arch: x86
     steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
         with:
-          version: ${{ matrix.julia-version }}
-          arch: ${{ matrix.julia-arch }}
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+      - uses: actions/cache@v4
+        if: ${{ env.JULIA_CACHE != '0'}}
+        with:
+          path: ~/.julia
+          key: ${{ runner.os }}-juliacontainer-${{ env.JULIA_CACHE }}-${{ hashFiles('**/Manifest.toml') }}
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1

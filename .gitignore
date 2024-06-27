@@ -5,6 +5,7 @@
 coverage
 coverage.info
 deps/builds
+Manifest.toml
 
 
 ### Linux ###

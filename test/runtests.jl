@@ -21,7 +21,8 @@ using CorrectMatch.Marginal, CorrectMatch.Individual
 using Distributions, PDMats, StatsFuns
 
 using Compat
-using Compat.Test, Compat.LinearAlgebra
+using LinearAlgebra
+using Test
 
 
 @testset "Uniqueness" begin

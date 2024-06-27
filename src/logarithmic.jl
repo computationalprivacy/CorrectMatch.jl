@@ -18,20 +18,21 @@
 
 using Distributions, Roots
 
-import Distributions: @check_args, @distr_support, partype, pdf, cdf, logpdf
+using Distributions: @check_args, @distr_support
+import Distributions: partype, pdf, cdf, logpdf
 
 
-import Compat.Statistics: mean, median, var, quantile
+import Statistics: mean, median, var, quantile
 import Base: convert, minimum, maximum
 import StatsBase: params, mode, fit
-import Compat.Random: rand, GLOBAL_RNG, AbstractRNG
+import Random: rand, GLOBAL_RNG, AbstractRNG
 
 
 struct Logarithmic{T<:Real} <: DiscreteUnivariateDistribution
   p::T
 
   function Logarithmic{T}(p::T) where T
-    @check_args(Logarithmic, zero(p) < p < one(p))
+    @macroexpand @check_args(Logarithmic, zero(p) < p < one(p))
     new{T}(p)
   end
 

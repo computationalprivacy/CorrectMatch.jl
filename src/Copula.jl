@@ -23,7 +23,7 @@ using Distributions, PDMats, StatsBase, StatsFuns, Roots
 using Discreet
 using mvndst_jll
 
-using Compat.LinearAlgebra
+using LinearAlgebra
 using Compat: undef
 if VERSION >= v"0.7-"
     chol(A) = cholesky(A)

@@ -22,6 +22,7 @@ include("logarithmic.jl")
 using StatsBase, Distributions, Optim
 using Discreet
 using Compat: argmin
+using Roots: fzero
 
 export fit_histogram, extract_marginal, number_bins
 
@@ -87,6 +88,10 @@ function fit_histogram(counts::AbstractVector{Int}; ϵ = 1e-5)
 
     # Return the best distribution according to BIC
     bics = [bic(rv, counts) for rv in rvs]
+
+    # prints the BICs
+    println(bics)
+
     rvs[argmin(bics)]
 end
 

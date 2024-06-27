@@ -45,7 +45,7 @@ function apply_marginals(data::AbstractMatrix{Float64},
   discrete_data
 end
 
-import Compat.Random: rand
+import Random: rand
 function rand(d::GaussianCopula, n::Int)
     continuous_sample = gaussian_rvs(d.Σ, n)
     apply_marginals(continuous_sample, d.marginals)
