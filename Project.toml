@@ -1,6 +1,6 @@
 name = "CorrectMatch"
 uuid = "26fcc630-e5d3-11e9-1f2e-33567d4860bc"
-version = "1.3.1"
+version = "1.3.2"
 authors = ["Luc Rocher", "Julien Hendrickx", "Yves-Alexandre de Montjoye"]
 description = "Statistical estimation of re-identification risks using Gaussian copula models"
 repository = "https://github.com/computationalprivacy/CorrectMatch.jl"

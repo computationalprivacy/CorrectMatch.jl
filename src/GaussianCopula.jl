@@ -195,12 +195,14 @@ function fit_mle(
     data::AbstractMatrix{T};
     samples::Int = 10000,
     exact_marginal::Bool = false,
+    adaptative_threshold::Int = 100,    
+    mi_abs_tol::Float64 = 1e-5,
 ) where {T<:Integer}
     CM.validate_discrete_data(data, "data")
 
     try
         marginals = _extract_marginals(data, exact_marginal)
-        fit_mle(GaussianCopula, marginals, data; samples = samples)
+        fit_mle(GaussianCopula, marginals, data; samples = samples, adaptative_threshold = adaptative_threshold, mi_abs_tol = mi_abs_tol)
     catch e
         CM.wrap_fitting_error(e, "Failed to fit Gaussian copula model")
     end
@@ -235,8 +237,8 @@ function fit_mle(
     d::Type{GaussianCopula},
     marginals::Vector{<:DiscreteUnivariateDistribution},
     data::AbstractMatrix{T};
-    adaptative_threshold::Int = 100,
     samples::Int = 10000,
+    adaptative_threshold::Int = 100,    
     mi_abs_tol::Float64 = 1e-5,
 ) where {T<:Integer}
     CM.validate_discrete_data(data, "data")
@@ -313,10 +315,11 @@ function _fit_mle_mi_matrix(
             try
                 ϵ = eps(Float64)
                 obj_fun(t) = obj_using_samples(t, samples, [m_i, m_j], mi_matrix[i, j])
-                results = find_zero(obj_fun, (ϵ, 1.0 - ϵ), Bisection())
+                # Set slightly wider bounds to avoid edge-case issues:
+                results = find_zero(obj_fun, (-ϵ, 1.0 + ϵ), Bisection())
 
                 if !isfinite(results) || results < -1 || results > 1
-                    throw(CM.NumericalInstabilityError("Invalid correlation estimate: $results", "root finding"))
+                    throw(CM.NumericalInstabilityError("Invalid correlation estimate: $results"))
                 end
 
                 corr_up[i, j] = results
@@ -324,12 +327,7 @@ function _fit_mle_mi_matrix(
                 if e isa CM.NumericalInstabilityError
                     rethrow(e)
                 else
-                    throw(
-                        CM.NumericalInstabilityError(
-                            "Failed to estimate correlation for variables $i and $j",
-                            "optimization",
-                        ),
-                    )
+                    throw(CM.NumericalInstabilityError("Failed to estimate correlation for variables $i and $j", e))
                 end
             end
         end

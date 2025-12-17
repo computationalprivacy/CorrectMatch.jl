@@ -46,9 +46,16 @@ show(io::IO, e::InsufficientDataError) = print(io, "InsufficientDataError: ", e.
 
 struct NumericalInstabilityError <: CorrectMatchError
     msg::String
-    operation::String
+    cause::Union{Exception,Nothing}
+    NumericalInstabilityError(msg::String) = new(msg, nothing)
+    NumericalInstabilityError(msg::String, cause::Exception) = new(msg, cause)
 end
-show(io::IO, e::NumericalInstabilityError) = print(io, "NumericalInstabilityError in ", e.operation, ": ", e.msg)
+show(io::IO, e::NumericalInstabilityError) = begin
+    print(io, "NumericalInstabilityError: ", e.msg)
+    if e.cause !== nothing
+        print(io, " (caused by: ", e.cause, ")")
+    end
+end
 
 function wrap_fitting_error(e::Exception, msg::String)
     e isa CorrectMatchError && rethrow(e)
