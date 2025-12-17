@@ -50,6 +50,17 @@ function smooth_weight(
     return cell_probs
 end
 
+function _validate_probability(p::Float64)
+    if !isfinite(p) || p < 0 || p > 1
+        throw(
+            CM.NumericalInstabilityError(
+                "Average probability $p is invalid (must be in [0,1])",
+                "probability estimation",
+            ),
+        )
+    end
+end
+
 """Estimate the probability that a specific record is unique within a population of given size."""
 function individual_uniqueness(
     p::Copula.GaussianCopula{T},
@@ -60,15 +71,24 @@ function individual_uniqueness(
     cells = smooth_weight(p, indiv; iter = iter)
     p_avg = mean(cells)
 
-    if !isfinite(p_avg) || p_avg < 0 || p_avg > 1
-        throw(
-            CM.NumericalInstabilityError(
-                "Average cell probability $p_avg is invalid (must be in [0,1])",
-                "probability estimation",
-            ),
-        )
-    end
+    _validate_probability(p_avg)
     return (1 - p_avg)^(n - 1)
 end
 
+
+"""Estimate the probability that a specific record is correctly identified within a population of given size."""
+function individual_correctness(
+    p::Copula.GaussianCopula{T},
+    indiv::AbstractVector{Int},
+    n::Int;
+    iter::Int = 100,
+) where {T<:Real}
+    cells = smooth_weight(p, indiv; iter = iter)
+    p_avg = mean(cells)
+
+    _validate_probability(p_avg)
+    return 1 / (n * p_avg) * (1 - (1 - p_avg)^n)
 end
+
+
+end # module

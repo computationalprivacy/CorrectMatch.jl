@@ -19,27 +19,30 @@ sudo pacman -S gcc-gfortran    # on Archlinux-based systems
 
 ## Usage
 
-CorrectMatch contains functions to fit a copula model and estimate the population uniqueness:
+CorrectMatch contains functions to fit a copula model and estimate population uniqueness and corectness:
 
 ```julia
 using CorrectMatch
 # Create a simple dataset of 100 records and 4 independent columns, and compute the true uniqueness
 d = rand(1:10, 1000, 3)
-uniqueness(d)  # 0.377
+uniqueness(d)  # 0.376
 
 # The first precompilation takes a few seconds
 G = fit_mle(GaussianCopula, d)
 d_sim = rand(G, 1000)
-uniqueness(d_sim)  # 0.361
+uniqueness(d_sim)  # 0.355
+correctness(d_sim)  # 0.622
 ```
 
-but also the likelihood of uniqueness for a single individual:
+but also the likelihood of uniqueness and correctness for a single individual:
 ```julia
 # Uniqueness of record (5, 5, 5)
-individual_uniqueness(G, [5, 5, 5], 1000)  # 0.34276768289842735
+individual_uniqueness(G, [5, 5, 5], 1000)  # 0.351
+# Correctness of record (5, 5, 5)
+individual_correctness(G, [5, 5, 5], 1000)  # 0.621
 ```
 
-See the [examples](https://github.com/computationalprivacy/CorrectMatch.jl/tree/master/examples) folder to learn how to load a CSV file and estimate the uniqueness from a small sample.
+See the [examples](https://github.com/computationalprivacy/CorrectMatch.jl/tree/master/examples) folder to learn how to load a CSV file and estimate the metrics from a small sample.
 
 ## License
 GNU General Public License v3.0

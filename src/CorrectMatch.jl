@@ -25,16 +25,16 @@ include("validation.jl")
 # Internal submodules - these provide the core functionality
 include("Marginal.jl")
 include("GaussianCopula.jl")
-include("Uniqueness.jl")
+include("Population.jl")
 include("Individual.jl")
 
-export uniqueness, individual_uniqueness, GaussianCopula
+export uniqueness, correctness, individual_uniqueness, individual_correctness, GaussianCopula
 
 # Import functions from submodules into main namespace
-using .Uniqueness: uniqueness
+using .Population: uniqueness, correctness
 using .Marginal: fit_histogram
 using .Copula: GaussianCopula, fit_mle
-using .Individual: individual_uniqueness
+using .Individual: individual_uniqueness, individual_correctness
 
 # Re-export fit_mle
 export fit_mle
