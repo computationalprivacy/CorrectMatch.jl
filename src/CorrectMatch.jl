@@ -33,10 +33,10 @@ export uniqueness, correctness, individual_uniqueness, individual_correctness, G
 # Import functions from submodules into main namespace
 using .Population: uniqueness, correctness
 using .Marginal: fit_histogram
-using .Copula: GaussianCopula, fit_mle, encode_record
+using .Copula: GaussianCopula, fit_mle, encode_record, returns_dataframe
 using .Individual: individual_uniqueness, individual_correctness
 
-# Re-export fit_mle and encode_record
-export fit_mle, encode_record
+# Re-export fit_mle, encode_record, and returns_dataframe
+export fit_mle, encode_record, returns_dataframe
 
 end

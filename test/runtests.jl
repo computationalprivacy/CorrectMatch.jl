@@ -137,3 +137,114 @@ end
     @test 0 <= individual_uniqueness(G, df[1, :], nrow(df)) <= 1
     @test 0 <= individual_uniqueness(G, ["red", "S"], nrow(df)) <= 1
 end
+
+@testset "DataFrame integer columns sampling" begin
+    # Test that sampling from DataFrames with integer columns doesn't produce
+    # out-of-bounds indices (regression test for quantile edge cases)
+
+    # Create DataFrame with integer values 1-9
+    df = DataFrame(
+        col1 = repeat(1:9, 10),
+        col2 = repeat(1:9, 10),
+        col3 = repeat(1:9, 10)
+    )
+
+    G = fit_mle(GaussianCopula, df)
+    @test isa(G, GaussianCopula)
+
+    # Sampling should not throw any errors
+    samples = rand(G, 1000)
+    @test size(samples) == (1000, 3)
+
+    # All sampled values should be within the original value range
+    for col in eachcol(samples)
+        @test all(v -> v in 1:9, col)
+    end
+end
+
+@testset "encode function edge cases" begin
+    # Test the encode function handles edge probability values correctly
+    using CorrectMatch.Copula: encode
+
+    # Create a simple categorical distribution
+    d = Categorical([0.25, 0.25, 0.25, 0.25])
+    K = ncategories(d)
+
+    # Test with probability 0.0 (edge case that could return 0)
+    result = encode(d, [0.0])
+    @test result[1] >= 1
+    @test result[1] <= K
+
+    # Test with probability 1.0 (edge case that could return K+1)
+    result = encode(d, [1.0])
+    @test result[1] >= 1
+    @test result[1] <= K
+
+    # Test with very small probability
+    result = encode(d, [1e-15])
+    @test result[1] >= 1
+    @test result[1] <= K
+
+    # Test with probability very close to 1.0
+    result = encode(d, [1.0 - 1e-15])
+    @test result[1] >= 1
+    @test result[1] <= K
+
+    # Test normal range
+    result = encode(d, [0.5])
+    @test result[1] >= 1
+    @test result[1] <= K
+end
+
+@testset "Large sample DataFrame integer columns" begin
+    # Stress test: large samples increase likelihood of hitting edge cases
+    df = DataFrame(
+        a = rand(1:5, 100),
+        b = rand(1:10, 100),
+        c = rand(1:3, 100)
+    )
+
+    G = fit_mle(GaussianCopula, df)
+
+    # Generate many samples to increase chance of edge probability values
+    for _ in 1:10
+        samples = rand(G, 10000)
+        @test size(samples, 1) == 10000
+
+        # Verify all values are within expected bounds
+        @test all(v -> v in levels(G.categories[1]), samples[:, 1])
+        @test all(v -> v in levels(G.categories[2]), samples[:, 2])
+        @test all(v -> v in levels(G.categories[3]), samples[:, 3])
+    end
+end
+
+@testset "returns_dataframe and rand output type" begin
+    # Model fitted from Matrix should return Matrix
+    data_matrix = [1 1; 2 2; 3 3; 1 2]
+    G_matrix = fit_mle(GaussianCopula, data_matrix)
+    @test returns_dataframe(G_matrix) == false
+    samples_matrix = rand(G_matrix, 10)
+    @test isa(samples_matrix, Matrix{Int})
+    @test size(samples_matrix) == (10, 2)
+
+    # Model fitted from DataFrame should return DataFrame
+    df = DataFrame(a = [1, 2, 3, 1], b = [1, 2, 3, 2])
+    G_df = fit_mle(GaussianCopula, df)
+    @test returns_dataframe(G_df) == true
+    samples_df = rand(G_df, 10)
+    @test isa(samples_df, DataFrame)
+    @test size(samples_df) == (10, 2)
+
+    # Model fitted from DataFrame with strings should return DataFrame with original values
+    df_strings = DataFrame(
+        color = ["red", "blue", "green", "red"],
+        size = ["S", "M", "L", "S"]
+    )
+    G_strings = fit_mle(GaussianCopula, df_strings)
+    @test returns_dataframe(G_strings) == true
+    samples_strings = rand(G_strings, 100)
+    @test isa(samples_strings, DataFrame)
+    # Verify that sampled values are from the original categories
+    @test all(v -> v in ["red", "blue", "green"], samples_strings[:, 1])
+    @test all(v -> v in ["S", "M", "L"], samples_strings[:, 2])
+end

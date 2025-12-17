@@ -116,17 +116,18 @@ struct GaussianCopula{T<:Real} <: DiscreteMultivariateDistribution
     Σ::PDMat{T}
     marginals::Vector{DiscreteUnivariateDistribution}
     categories::Vector{CategoricalVector}  # Stores levels for encoding
+    returns_dataframe::Bool  # Whether rand() should return DataFrame or Matrix
 
-    function GaussianCopula{T}(Σ::PDMat{T}, marginals::AbstractVector{<:DiscreteUnivariateDistribution}, categories::AbstractVector{<:CategoricalVector}) where {T<:Real}
-        return new{T}(Σ, collect(marginals), collect(categories))
+    function GaussianCopula{T}(Σ::PDMat{T}, marginals::AbstractVector{<:DiscreteUnivariateDistribution}, categories::AbstractVector{<:CategoricalVector}, returns_dataframe::Bool) where {T<:Real}
+        return new{T}(Σ, collect(marginals), collect(categories), returns_dataframe)
     end
 end
 
-function GaussianCopula(Σ::PDMat{T}, marginals::AbstractVector{<:DiscreteUnivariateDistribution}, categories::AbstractVector{<:CategoricalVector}) where {T<:Real}
-    return GaussianCopula{T}(Σ, marginals, categories)
+function GaussianCopula(Σ::PDMat{T}, marginals::AbstractVector{<:DiscreteUnivariateDistribution}, categories::AbstractVector{<:CategoricalVector}, returns_dataframe::Bool=true) where {T<:Real}
+    return GaussianCopula{T}(Σ, marginals, categories, returns_dataframe)
 end
 
-# Backward-compatible constructor: create default 1:K categories for each marginal
+# Backward-compatible constructor: create default 1:K categories for each marginal (returns Matrix)
 function GaussianCopula(Σ::PDMat{T}, marginals::AbstractVector{<:DiscreteUnivariateDistribution}) where {T<:Real}
     function default_categories(m)
         try
@@ -136,10 +137,14 @@ function GaussianCopula(Σ::PDMat{T}, marginals::AbstractVector{<:DiscreteUnivar
         end
     end
     categories = [default_categories(m) for m in marginals]
-    return GaussianCopula{T}(Σ, marginals, categories)
+    return GaussianCopula{T}(Σ, marginals, categories, false)
 end
 
 params(d::GaussianCopula{T}) where {T} = (d.Σ, d.marginals)
+
+"""Check whether `rand(G, n)` will return a `DataFrame` or a `Matrix{Int}`."""
+returns_dataframe(G::GaussianCopula) = G.returns_dataframe
+
 
 """Encode a record to 1-based indices using the copula's stored categories."""
 function encode_record(G::GaussianCopula, record::DataFrameRow)
@@ -163,7 +168,8 @@ function gaussian_rvs(Σ::AbstractPDMat{T}, n::Int) where {T<:Real}
 end
 
 function encode(d::DiscreteUnivariateDistribution, column::AbstractVector{T}) where {T<:Real}
-    return [quantile(d, c) for c in column]
+    K = ncategories(d)
+    return [clamp(quantile(d, c), 1, K) for c in column]
 end
 
 function apply_marginals(
@@ -188,12 +194,17 @@ end
 function rand(d::GaussianCopula{T}, n::Int) where {T<:Real}
     encoded = _sample_encoded(d, n)
 
-    # Decode to original category values and return as DataFrame
-    cols = [levels(d.categories[j])[encoded[:, j]] for j in axes(encoded, 2)]
-    return DataFrame(cols, Symbol.(1:length(cols)))
+    if d.returns_dataframe
+        # Decode to original category values and return as DataFrame
+        cols = [levels(d.categories[j])[encoded[:, j]] for j in axes(encoded, 2)]
+        return DataFrame(cols, Symbol.(1:length(cols)))
+    else
+        # Return as Matrix{Int} for models fitted from matrices
+        return encoded
+    end
 end
 
-rand(d::GaussianCopula) = rand(d, 1)[1, :]
+rand(d::GaussianCopula) = d.returns_dataframe ? rand(d, 1)[1, :] : rand(d, 1)[1, :]
 
 #=
 ================================================================================
@@ -245,7 +256,7 @@ function fit_mle(
 
     marginals = _extract_marginals(encoded, exact_marginal)
     G = fit_mle(GaussianCopula, marginals, encoded; samples=samples, adaptative_threshold=adaptative_threshold, mi_abs_tol=mi_abs_tol)
-    GaussianCopula(G.Σ, G.marginals, categories)
+    GaussianCopula(G.Σ, G.marginals, categories, true)  # returns_dataframe=true
 end
 
 """Fit a Gaussian copula model to discrete multivariate data using maximum likelihood estimation."""
