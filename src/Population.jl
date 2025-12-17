@@ -21,6 +21,8 @@ module Population
 import ..CorrectMatch as CM
 
 using StatsBase: countmap, values
+using CategoricalArrays
+using DataFrames
 
 
 # Hashing function to create unique identifiers per row in a matrix
@@ -73,5 +75,13 @@ function correctness(data::Union{AbstractVector{T}, AbstractMatrix{T}}) where {T
     freqs = frequencies_from_data(data)
     correctness_from_freqs(freqs, N)
 end
+
+# DataFrame dispatches
+function _encode_dataframe(df::DataFrame)
+    reduce(hcat, [levelcode.(categorical(col)) for col in eachcol(df)])
+end
+
+uniqueness(df::DataFrame) = uniqueness(_encode_dataframe(df))
+correctness(df::DataFrame) = correctness(_encode_dataframe(df))
 
 end

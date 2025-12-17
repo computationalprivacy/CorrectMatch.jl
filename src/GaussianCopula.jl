@@ -25,6 +25,8 @@ using Distributions, PDMats, StatsBase, StatsFuns, Roots
 using Discreet
 using mvndst_jll
 using LinearAlgebra
+using CategoricalArrays
+using DataFrames
 
 using Distributions: DiscreteMultivariateDistribution, DiscreteUnivariateDistribution
 
@@ -113,17 +115,45 @@ GaussianCopula Distribution
 struct GaussianCopula{T<:Real} <: DiscreteMultivariateDistribution
     Σ::PDMat{T}
     marginals::Vector{DiscreteUnivariateDistribution}
+    categories::Vector{CategoricalVector}  # Stores levels for encoding
 
-    function GaussianCopula{T}(Σ::PDMat{T}, marginals::AbstractVector{<:DiscreteUnivariateDistribution}) where {T<:Real}
-        return new{T}(Σ, collect(marginals))
+    function GaussianCopula{T}(Σ::PDMat{T}, marginals::AbstractVector{<:DiscreteUnivariateDistribution}, categories::AbstractVector{<:CategoricalVector}) where {T<:Real}
+        return new{T}(Σ, collect(marginals), collect(categories))
     end
 end
 
+function GaussianCopula(Σ::PDMat{T}, marginals::AbstractVector{<:DiscreteUnivariateDistribution}, categories::AbstractVector{<:CategoricalVector}) where {T<:Real}
+    return GaussianCopula{T}(Σ, marginals, categories)
+end
+
+# Backward-compatible constructor: create default 1:K categories for each marginal
 function GaussianCopula(Σ::PDMat{T}, marginals::AbstractVector{<:DiscreteUnivariateDistribution}) where {T<:Real}
-    return GaussianCopula{T}(Σ, marginals)
+    function default_categories(m)
+        try
+            categorical(1:ncategories(m))
+        catch
+            categorical(1:1000)  # Default for unbounded distributions
+        end
+    end
+    categories = [default_categories(m) for m in marginals]
+    return GaussianCopula{T}(Σ, marginals, categories)
 end
 
 params(d::GaussianCopula{T}) where {T} = (d.Σ, d.marginals)
+
+"""Encode a record to 1-based indices using the copula's stored categories."""
+function encode_record(G::GaussianCopula, record::DataFrameRow)
+    encode_record(G, collect(record))
+end
+
+function encode_record(G::GaussianCopula, record::AbstractVector)
+    [findfirst(==(record[j]), levels(G.categories[j])) for j in eachindex(G.categories)]
+end
+
+"""Decode a 1-based index vector back to original category values."""
+function decode_record(G::GaussianCopula, encoded::AbstractVector{<:Integer})
+    [levels(G.categories[j])[encoded[j]] for j in eachindex(G.categories)]
+end
 
 ### Sampling
 
@@ -149,12 +179,21 @@ end
 
 import Random: rand
 
-function rand(d::GaussianCopula{T}, n::Int) where {T<:Real}
+# Internal sampling function that returns encoded matrix (used during fitting)
+function _sample_encoded(d::GaussianCopula{T}, n::Int) where {T<:Real}
     continuous_sample = gaussian_rvs(d.Σ, n)
     return apply_marginals(continuous_sample, d.marginals)
 end
 
-rand(d::GaussianCopula) = rand(d, 1)
+function rand(d::GaussianCopula{T}, n::Int) where {T<:Real}
+    encoded = _sample_encoded(d, n)
+
+    # Decode to original category values and return as DataFrame
+    cols = [levels(d.categories[j])[encoded[:, j]] for j in axes(encoded, 2)]
+    return DataFrame(cols, Symbol.(1:length(cols)))
+end
+
+rand(d::GaussianCopula) = rand(d, 1)[1, :]
 
 #=
 ================================================================================
@@ -180,7 +219,7 @@ function obj_using_samples(
     (theta >= 1) && return Inf
 
     G = GaussianCopula(PDMat([1.0 theta; theta 1.0]), marginals)
-    discrete_sample = rand(G, nb_rows)
+    discrete_sample = _sample_encoded(G, nb_rows)
     mi_sample = mutual_information(discrete_sample; normalize = false, adjusted = true)[2, 1]
     return mi_sample - mi_opt
 end
@@ -189,13 +228,33 @@ end
 
 import Distributions.fit_mle
 
+"""Fit a Gaussian copula model from a DataFrame."""
+function fit_mle(
+    ::Type{GaussianCopula},
+    df::DataFrame;
+    samples::Int = 10000,
+    exact_marginal::Bool = true,
+    adaptative_threshold::Int = 100,
+    mi_abs_tol::Float64 = 1e-5,
+)
+    # Convert each column to CategoricalArray and extract level codes
+    categories = [categorical(col) for col in eachcol(df)]
+    encoded = reduce(hcat, [levelcode.(cat) for cat in categories])
+
+    CM.validate_discrete_data(encoded, "data")
+
+    marginals = _extract_marginals(encoded, exact_marginal)
+    G = fit_mle(GaussianCopula, marginals, encoded; samples=samples, adaptative_threshold=adaptative_threshold, mi_abs_tol=mi_abs_tol)
+    GaussianCopula(G.Σ, G.marginals, categories)
+end
+
 """Fit a Gaussian copula model to discrete multivariate data using maximum likelihood estimation."""
 function fit_mle(
     d::Type{GaussianCopula},
     data::AbstractMatrix{T};
     samples::Int = 10000,
-    exact_marginal::Bool = false,
-    adaptative_threshold::Int = 100,    
+    exact_marginal::Bool = true,
+    adaptative_threshold::Int = 100,
     mi_abs_tol::Float64 = 1e-5,
 ) where {T<:Integer}
     CM.validate_discrete_data(data, "data")
@@ -212,7 +271,7 @@ function fit_mle(
     d::Type{GaussianCopula},
     Σ::PDMat{S},
     data::AbstractMatrix{T};
-    exact_marginal::Bool = false,
+    exact_marginal::Bool = true,
 ) where {S<:Real,T<:Integer}
     CM.validate_discrete_data(data, "data")
     CM.validate_correlation_matrix(Σ.mat, "correlation matrix")

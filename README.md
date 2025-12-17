@@ -19,27 +19,59 @@ sudo pacman -S gcc-gfortran    # on Archlinux-based systems
 
 ## Usage
 
-CorrectMatch contains functions to fit a copula model and estimate population uniqueness and corectness:
+CorrectMatch works directly with DataFrames, automatically handling categorical variables:
 
 ```julia
 using CorrectMatch
-# Create a simple dataset of 100 records and 4 independent columns, and compute the true uniqueness
-d = rand(1:10, 1000, 3)
-uniqueness(d)  # 0.376
+using DataFrames
 
-# The first precompilation takes a few seconds
-G = fit_mle(GaussianCopula, d)
-d_sim = rand(G, 1000)
-uniqueness(d_sim)  # 0.355
-correctness(d_sim)  # 0.622
+# Load your data as a DataFrame
+df = DataFrame(
+    age = [25, 30, 35, 25, 30],
+    gender = ["M", "F", "X", "M", "M"],
+    city = ["NYC", "LA", "NYC", "NYC", "SF"]
+)
+
+# Compute population metrics directly on DataFrame
+uniqueness(df)   # 0.60 (fraction of unique records)
+correctness(df)  # 0.80 (fraction of correctly re-identifiable records)
+
+# Fit a Gaussian copula model
+G = fit_mle(GaussianCopula, df)
+
+# Generate synthetic data
+d_sim = rand(G, 100)
+uniqueness(d_sim)  # e.g., 0.04
 ```
 
-but also the likelihood of uniqueness and correctness for a single individual:
+Individual uniqueness and correctness can be computed for any record:
+
 ```julia
-# Uniqueness of record (5, 5, 5)
-individual_uniqueness(G, [5, 5, 5], 1000)  # 0.351
-# Correctness of record (5, 5, 5)
-individual_correctness(G, [5, 5, 5], 1000)  # 0.621
+indiv = df[1, :]
+individual_uniqueness(G, indiv, 100)  # e.g., 0.20
+individual_correctness(G, indiv, 100)  # e.g., 0.50
+
+# Or pass raw values
+individual_uniqueness(G, [35, "M", "NYC"], 100)  # e.g., 0.35
+```
+
+### Working with integer matrices
+
+The codebase also supports working directly with integer matrices, where each column represents a categorical variable encoded as integers starting from 1. This allows for using the `exact_marginal=false` option for better fitting distributions in small sparse datasets.
+
+```julia
+# Create a simple dataset of 1000 records and 3 columns
+d = rand(1:10, 1000, 3)
+uniqueness(d)
+
+G = fit_mle(GaussianCopula, d)
+d_sim = rand(G, 1000)
+uniqueness(d_sim)
+correctness(d_sim)
+
+# Individual metrics (values must be 1-indexed for matrix API)
+individual_uniqueness(G, [5, 5, 5], 1000)
+individual_correctness(G, [5, 5, 5], 1000)
 ```
 
 See the [examples](https://github.com/computationalprivacy/CorrectMatch.jl/tree/master/examples) folder to learn how to load a CSV file and estimate the metrics from a small sample.

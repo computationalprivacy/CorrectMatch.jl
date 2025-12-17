@@ -17,26 +17,31 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using CorrectMatch
+using DataFrames
 using StatsBase
 using CSV
 using CodecZlib
 
-# Read gzipped CSV file using modern Julia idioms
+# Read gzipped CSV file
 df = CSV.read(transcode(GzipDecompressor, read("adult.csv.gz")), DataFrame)
-data = Matrix{Int}(df)
-N = size(data, 1)
+N = nrow(df)
 
 # True population uniqueness
-u = uniqueness(data)
+u = uniqueness(df)
 println("True population uniqueness: $u")
 
-# Fit model and estimate uniqueness
-G = fit_mle(GaussianCopula, data; exact_marginal=true)
+# Fit model from DataFrame
+G = fit_mle(GaussianCopula, df)
 u = uniqueness(rand(G, N))
 println("Estimated population uniqueness: $u")
 
+# Individual uniqueness
+indiv = df[1, :]
+u_indiv = individual_uniqueness(G, indiv, N)
+println("Individual uniqueness (record 1): $u_indiv")
+
 # Fit model on 325 records (1% of the original data) and estimate uniqueness
 ix = sample(1:N, 325; replace=false)
-G = fit_mle(GaussianCopula, data[ix, :]; exact_marginal=false)
-u = uniqueness(rand(G, N))
+G_sample = fit_mle(GaussianCopula, df[ix, :])
+u = uniqueness(rand(G_sample, N))
 println("Estimated population uniqueness (1% sample): $u")

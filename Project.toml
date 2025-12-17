@@ -6,6 +6,8 @@ description = "Statistical estimation of re-identification risks using Gaussian 
 repository = "https://github.com/computationalprivacy/CorrectMatch.jl"
 
 [deps]
+CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Discreet = "c2843242-4f35-58a6-a2a0-7e7527607317"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -21,6 +23,8 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 mvndst_jll = "78cd126e-648e-5a4b-8892-63be0e833cb1"
 
 [compat]
+CategoricalArrays = "0.10"
+DataFrames = "1.6"
 Discreet = "1.0"
 Distributions = "0.25"
 LinearAlgebra = "1.9, 1.10, 1.11, 1.12, 1.13"

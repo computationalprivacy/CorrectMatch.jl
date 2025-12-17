@@ -27,12 +27,13 @@ export smooth_weight, individual_uniqueness
 
 function smooth_weight(
     p::Copula.GaussianCopula{T},
-    indiv::AbstractVector{Int};
+    indiv;
     iter::Int = 100,
     kwargs...,
 ) where {T<:Real}
-    M = length(indiv)
-    ΔI = [pdf(p.marginals[j], indiv[j]) for j in eachindex(indiv)]
+    encoded = Copula.encode_record(p, indiv)
+    M = length(encoded)
+    ΔI = [pdf(p.marginals[j], encoded[j]) for j in eachindex(encoded)]
 
     cell_probs = Vector{Float64}(undef, iter)
     @inbounds for i in 1:iter
@@ -64,7 +65,7 @@ end
 """Estimate the probability that a specific record is unique within a population of given size."""
 function individual_uniqueness(
     p::Copula.GaussianCopula{T},
-    indiv::AbstractVector{Int},
+    indiv,
     n::Int;
     iter::Int = 100,
 ) where {T<:Real}
@@ -79,7 +80,7 @@ end
 """Estimate the probability that a specific record is correctly identified within a population of given size."""
 function individual_correctness(
     p::Copula.GaussianCopula{T},
-    indiv::AbstractVector{Int},
+    indiv,
     n::Int;
     iter::Int = 100,
 ) where {T<:Real}

@@ -19,6 +19,7 @@
 using CorrectMatch
 using CorrectMatch.Marginal, CorrectMatch.Individual
 using Distributions, PDMats, StatsFuns
+using DataFrames
 
 using LinearAlgebra
 using Test
@@ -73,7 +74,7 @@ end
     @test G.Σ.mat ≈ diagm(0 => ones(3)) atol=1e-3  # doesn't matter, for regression
     @test ncategories(G.marginals[1]) == 1
     @test probs(G.marginals[1]) ≈ [1.0]
-    @test rand(G, 4) == data
+    @test Matrix(rand(G, 4)) == data
 
     data = [1 2 3; 3 4 5; 6 7 9; 9 10 11]
     G = fit_mle(GaussianCopula, data; exact_marginal = true)
@@ -91,4 +92,48 @@ end
     @test 1.0 == individual_correctness(G, [1, 1, 1], 1)
     @test 0.5 == individual_correctness(G, [1, 1, 1], 2)
     @test 1/3 == individual_correctness(G, [1, 1, 1], 3)
+end
+
+@testset "DataFrame integration" begin
+    # Test with non-1-indexed values
+    df = DataFrame(
+        a = [5, 10, 5, 10, 5],
+        b = [10, 20, 10, 30, 10]
+    )
+
+    # Population metrics work on DataFrame
+    @test uniqueness(df) == 2/5
+    @test correctness(df) == (2 + 1/3 * 3) / 5
+
+    # fit_mle works on DataFrame
+    G = fit_mle(GaussianCopula, df)
+    @test isa(G, GaussianCopula)
+    @test length(G.marginals) == 2
+    @test length(G.categories) == 2
+
+    # encode_record works
+    @test encode_record(G, df[1, :]) == [1, 1]  # 5 -> 1, 10 -> 1
+    @test encode_record(G, [5, 10]) == [1, 1]
+    @test encode_record(G, [10, 30]) == [2, 3]
+
+    N = nrow(df)
+    @test 0 <= individual_uniqueness(G, df[1, :], N) <= 1
+    @test 0 <= individual_correctness(G, df[1, :], N) <= 1
+
+    # Can also use raw values directly
+    @test 0 <= individual_uniqueness(G, [5, 10], N) <= 1
+end
+
+@testset "DataFrame categorical columns" begin
+    # Test that string columns work too
+    df = DataFrame(
+        color = ["red", "blue", "red", "green", "blue"],
+        size = ["S", "M", "L", "S", "M"]
+    )
+
+    G = fit_mle(GaussianCopula, df)
+    @test isa(G, GaussianCopula)
+
+    @test 0 <= individual_uniqueness(G, df[1, :], nrow(df)) <= 1
+    @test 0 <= individual_uniqueness(G, ["red", "S"], nrow(df)) <= 1
 end
