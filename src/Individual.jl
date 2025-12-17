@@ -18,46 +18,58 @@
 
 module Individual
 
+import ..CorrectMatch as CM
+
 using ..Copula
 using StatsFuns, Distributions
-using Compat: undef
 
 export smooth_weight, individual_uniqueness
 
-function smooth_weight(p::GaussianCopula, indiv::AbstractVector{Int}; iter::Int=100, kwargs...)
-  M = length(indiv)
-  ΔI =[pdf(p.marginals[j], indiv[j]) for j=1:M]
+function smooth_weight(
+    p::Copula.GaussianCopula{T},
+    indiv::AbstractVector{Int};
+    iter::Int = 100,
+    kwargs...,
+)::Vector{Float64} where {T<:Real}
+    M = length(indiv)
+    ΔI::Vector{Float64} = [pdf(p.marginals[j], indiv[j]) for j in 1:M]
 
-  cell_probs = Array{Float64}(undef, iter)
-  for i=1:iter
-    lower = rand(M) .* (1 .- ΔI)
-    upper = lower .+ ΔI
+    cell_probs = Vector{Float64}(undef, iter)
+    for i in 1:iter
+        lower::Vector{Float64} = rand(M) .* (1 .- ΔI)
+        upper::Vector{Float64} = lower .+ ΔI
 
-    # Convert to gaussian marginals
-    lower = norminvcdf.(lower)
-    upper = norminvcdf.(upper)
+        # Convert to gaussian marginals
+        lower = norminvcdf.(lower)
+        upper = norminvcdf.(upper)
 
-    # Estimate the cell probability for this arrangement
-    _, cell_probs[i], _ = Copula.call_mvndst(lower, upper, p.Σ.mat; kwargs...)
-  end
+        # Estimate the cell probability for this arrangement
+        _, cell_probs[i], _ = Copula.call_mvndst(lower, upper, p.Σ.mat; kwargs...)
+    end
 
-  cell_probs
+    return cell_probs
 end
 
-""" Estimate individual uniqueness for one given record. """
-function individual_uniqueness(p::GaussianCopula, indiv::AbstractVector{Int}, n::Int; iter::Int=100)
-  cells = smooth_weight(p, indiv)
-  p_avg = mean(cells)
-  (1 - p_avg) ^ (n - 1)
-end
+"""Estimate the probability that a specific record is unique within a population of given size."""
+function individual_uniqueness(
+    p::Copula.GaussianCopula{T},
+    indiv::AbstractVector{Int},
+    n::Int;
+    iter::Int = 100,
+)::Float64 where {T<:Real}
+    cells::Vector{Float64} = smooth_weight(p, indiv; iter = iter)
+    p_avg::Float64 = mean(cells)
 
-# function individual_uniqueness(p::GaussianCopula, n::Int=100; iter::Int=10)
-#   scores = Array{Float64}(n)
-#   for i=1:n
-#     cells = smooth_weight(p, rrand(p))
-#     scores[i] = (1)
-#   end
-#   # cells =   uniqueness_cell(c) = (1 - c / correction)^(N-1)
-# end
+    # Additional numerical checks
+    if !isfinite(p_avg) || p_avg < 0 || p_avg > 1
+        throw(
+            CM.NumericalInstabilityError(
+                "Average cell probability $p_avg is invalid (must be in [0,1])",
+                "probability estimation",
+            ),
+        )
+    end
+    return (1 - p_avg) ^ (n - 1)
+end
 
 end

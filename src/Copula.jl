@@ -18,18 +18,16 @@
 
 module Copula
 
+import ..CorrectMatch as CM
+
 using ..Marginal
 using Distributions, PDMats, StatsBase, StatsFuns, Roots
 using Discreet
 using mvndst_jll
 
-using LinearAlgebra
-using Compat: undef
-if VERSION >= v"0.7-"
-    chol(A) = cholesky(A)
-end
+using Distributions: DiscreteMultivariateDistribution, DiscreteUnivariateDistribution
 
-export GaussianCopula, fit, fit_mle
+using LinearAlgebra
 
 include("copula/utils.jl")
 include("copula/distribution.jl")

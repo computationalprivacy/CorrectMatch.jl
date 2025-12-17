@@ -29,12 +29,12 @@ u = uniqueness(data)
 println("True population uniqueness: $u")
 
 # Fit model and estimate uniqueness
-G = fit_mle(GaussianCopula, data; exact_marginal=true)
+G = fit_mle(GaussianCopula, data; exact_marginal = true)
 u = uniqueness(rand(G, N))
 println("Estimated population uniqueness: $u")
 
 # Fit model on 325 records (1% of the original data) and estimate uniqueness
-ix = sample(1:N, 325; replace=false);
-G = fit_mle(GaussianCopula, data[ix, :]; exact_marginal=false)
+ix = sample(1:N, 325; replace = false);
+G = fit_mle(GaussianCopula, data[ix, :]; exact_marginal = false)
 u = uniqueness(rand(G, N))
 println("Estimated population uniqueness (1% sample): $u")

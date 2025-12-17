@@ -17,20 +17,24 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using Pkg
-using Compat: Cvoid
 import CorrectMatch
 
 """
 Call the Fortran 'mvndst' routine to integrate multivariate Gaussian
 distribution.
 """
-function call_mvndst(lo::Vector{Float64}, hi::Vector{Float64}, corr_mat; kwargs...)
-    N = length(lo)
+function call_mvndst(
+    lo::Vector{Float64},
+    hi::Vector{Float64},
+    corr_mat::AbstractMatrix{<:Real};
+    kwargs...,
+)::Tuple{Float64,Float64,Int}
+    N::Int = length(lo)
 
-    infin = Int[]
-    for i=1:N
-        lowinf = lo[i] == -Inf
-        uppinf = hi[i] == Inf
+    infin = Vector{Int}()
+    for i in 1:N
+        lowinf::Bool = lo[i] == -Inf
+        uppinf::Bool = hi[i] == Inf
 
         if lowinf && uppinf
             push!(infin, -1)
@@ -43,23 +47,52 @@ function call_mvndst(lo::Vector{Float64}, hi::Vector{Float64}, corr_mat; kwargs.
         end
     end
 
-    flat_corr = [corr_mat[i,j] for i=1:N for j=1:i-1]
-    mvndst(lo, hi, infin, flat_corr; kwargs...)
+    flat_corr::Vector{Float64} = [corr_mat[i, j] for i in 1:N for j in 1:(i-1)]
+    return mvndst(lo, hi, infin, flat_corr; kwargs...)
 end
 
-function mvndst(lower::Vector{Float64}, upper::Vector{Float64},
-                infin::Vector{Int}, correl::Vector{Float64};
-                maxpts::Int=2000,
-                abseps::Float64=1e-6,
-                releps::Float64=1e-6)
+function mvndst(
+    lower::Vector{Float64},
+    upper::Vector{Float64},
+    infin::Vector{Int},
+    correl::Vector{Float64};
+    maxpts::Int = 2000,
+    abseps::Float64 = 1e-6,
+    releps::Float64 = 1e-6,
+)::Tuple{Float64,Float64,Int}
     n = length(lower)
     @assert n == length(upper)
     @assert (n*(n-1)/2) == length(correl)
 
-    err, value, inform = Ref(1.), Ref(1.), Ref(1)
-    ccall((:mvndst_, libmvndst), Cvoid,
-        (Ref{Int}, Ptr{Float64}, Ptr{Float64}, Ptr{Int}, Ptr{Float64}, Ref{Int}, Ref{Float64}, Ref{Float64}, Ref{Float64}, Ref{Float64}, Ref{Int}),
-        n, lower, upper, infin, correl, maxpts, abseps, releps, err, value, inform)
+    err, value, inform = Ref(1.0), Ref(1.0), Ref(1)
+    ccall(
+        (:mvndst_, libmvndst),
+        Cvoid,
+        (
+            Ref{Int},
+            Ptr{Float64},
+            Ptr{Float64},
+            Ptr{Int},
+            Ptr{Float64},
+            Ref{Int},
+            Ref{Float64},
+            Ref{Float64},
+            Ref{Float64},
+            Ref{Float64},
+            Ref{Int},
+        ),
+        n,
+        lower,
+        upper,
+        infin,
+        correl,
+        maxpts,
+        abseps,
+        releps,
+        err,
+        value,
+        inform,
+    )
 
-    err[], value[], inform[]
+    return err[], value[], inform[]
 end

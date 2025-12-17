@@ -16,19 +16,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__precompile__(true)
-
 module CorrectMatch
-    include("Marginal.jl")
-    include("Copula.jl")
-    include("Uniqueness.jl")
-    include("Individual.jl")
 
+# Exception types and validation utilities
+include("exceptions.jl")
+include("validation.jl")
 
-    export uniqueness, fit_histogram, GaussianCopula, fit, fit_mle, individual_uniqueness
-    
-    using .Uniqueness: uniqueness
-    using .Marginal: fit_histogram
-    using .Copula: GaussianCopula, fit, fit_mle
-    using .Individual: individual_uniqueness
+# Internal submodules - these provide the core functionality
+include("Marginal.jl")
+include("Copula.jl")
+include("Uniqueness.jl")
+include("Individual.jl")
+
+export uniqueness, individual_uniqueness, GaussianCopula
+
+# Import functions from submodules into main namespace
+using .Uniqueness: uniqueness
+using .Marginal: fit_histogram
+using .Copula: GaussianCopula, fit_mle
+using .Individual: individual_uniqueness
+
+# Re-export fit_mle
+export fit_mle
+
 end
