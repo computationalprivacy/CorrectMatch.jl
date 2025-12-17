@@ -18,7 +18,7 @@
 
 using Distributions, Roots
 
-using Distributions: @check_args, @distr_support
+using Distributions: @distr_support
 import Distributions: partype, pdf, cdf, logpdf
 
 import Statistics: mean, median, var, quantile
@@ -30,7 +30,7 @@ struct Logarithmic{T<:Real} <: DiscreteUnivariateDistribution
     p::T
 
     function Logarithmic{T}(p::T) where {T}
-        @macroexpand @check_args(Logarithmic, zero(p) < p < one(p))
+        zero(p) < p < one(p) || throw(DomainError(p, "Logarithmic: p must be in (0, 1)"))
         return new{T}(p)
     end
 end

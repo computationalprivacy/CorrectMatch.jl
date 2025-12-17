@@ -24,7 +24,7 @@ include("validation.jl")
 
 # Internal submodules - these provide the core functionality
 include("Marginal.jl")
-include("Copula.jl")
+include("GaussianCopula.jl")
 include("Uniqueness.jl")
 include("Individual.jl")
 

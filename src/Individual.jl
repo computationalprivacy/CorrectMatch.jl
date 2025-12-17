@@ -30,14 +30,14 @@ function smooth_weight(
     indiv::AbstractVector{Int};
     iter::Int = 100,
     kwargs...,
-)::Vector{Float64} where {T<:Real}
+) where {T<:Real}
     M = length(indiv)
-    ΔI::Vector{Float64} = [pdf(p.marginals[j], indiv[j]) for j in 1:M]
+    ΔI = [pdf(p.marginals[j], indiv[j]) for j in eachindex(indiv)]
 
     cell_probs = Vector{Float64}(undef, iter)
-    for i in 1:iter
-        lower::Vector{Float64} = rand(M) .* (1 .- ΔI)
-        upper::Vector{Float64} = lower .+ ΔI
+    @inbounds for i in 1:iter
+        lower = rand(M) .* (1 .- ΔI)
+        upper = lower .+ ΔI
 
         # Convert to gaussian marginals
         lower = norminvcdf.(lower)
@@ -56,11 +56,10 @@ function individual_uniqueness(
     indiv::AbstractVector{Int},
     n::Int;
     iter::Int = 100,
-)::Float64 where {T<:Real}
-    cells::Vector{Float64} = smooth_weight(p, indiv; iter = iter)
-    p_avg::Float64 = mean(cells)
+) where {T<:Real}
+    cells = smooth_weight(p, indiv; iter = iter)
+    p_avg = mean(cells)
 
-    # Additional numerical checks
     if !isfinite(p_avg) || p_avg < 0 || p_avg > 1
         throw(
             CM.NumericalInstabilityError(
@@ -69,7 +68,7 @@ function individual_uniqueness(
             ),
         )
     end
-    return (1 - p_avg) ^ (n - 1)
+    return (1 - p_avg)^(n - 1)
 end
 
 end

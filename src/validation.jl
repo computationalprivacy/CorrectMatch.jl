@@ -20,13 +20,13 @@
 function validate_discrete_data(data::AbstractArray, name::String = "data")
     isempty(data) && throw(DataValidationError("$name cannot be empty"))
     any(!isfinite, data) && throw(DataValidationError("$name contains non-finite values"))
-    if isa(data, AbstractMatrix)
+    if data isa AbstractMatrix
         n_rows, n_cols = size(data)
         n_rows == 0 && throw(InsufficientDataError("$name must have at least one observation (row)"))
         n_cols == 0 && throw(DataValidationError("$name must have at least one variable (column)"))
     end
-    return isa(data, AbstractArray{<:AbstractFloat}) &&
-        @warn "$name contains floating-point values. CorrectMatch works best with discrete (integer) data."
+    return data isa AbstractArray{<:AbstractFloat} &&
+           @warn "$name contains floating-point values. CorrectMatch works best with discrete (integer) data."
 end
 
 """Validate that a matrix is a valid correlation matrix."""
@@ -64,7 +64,7 @@ function validate_correlation_matrix(Σ::AbstractMatrix{T}, name::String = "corr
             ),
         )
     catch e
-        isa(e, NumericalInstabilityError) && rethrow(e)
+        e isa NumericalInstabilityError && rethrow(e)
         throw(NumericalInstabilityError("Failed to check positive definiteness", "eigenvalue decomposition"))
     end
 end

@@ -31,25 +31,25 @@ import Distributions: DiscreteUnivariateDistribution
 
 ### Utils
 
-function number_bins(d::DiscreteUnivariateDistribution)::Int
-    isa(d, Categorical) && return ncategories(d)
+function number_bins(d::DiscreteUnivariateDistribution)
+    d isa Categorical && return ncategories(d)
     return typemax(Int)
 end
 
-function llog(d::DiscreteUnivariateDistribution, counts::AbstractVector{Int})::Float64
+function llog(d::DiscreteUnivariateDistribution, counts::AbstractVector{Int})
     slide = minimum(d)
     return sum(logpdf(d, i - 1 + slide) * v for (i, v) in enumerate(counts))
 end
 
 import StatsBase.bic
-function bic(d::DiscreteUnivariateDistribution, counts::AbstractVector{Int})::Float64
-    nb_params = isa(d, Categorical) ? ncategories(d) : length(params(d))
-    return - 2 * llog(d, counts) + log(sum(counts)) * nb_params
+function bic(d::DiscreteUnivariateDistribution, counts::AbstractVector{Int})
+    nb_params = d isa Categorical ? ncategories(d) : length(params(d))
+    return -2 * llog(d, counts) + log(sum(counts)) * nb_params
 end
 
 ### Fitting routines
 
-function fit_entropy(h::Float64, S::Int; ϵ::Float64 = 1e-6)::Float64
+function fit_entropy(h::Float64, S::Int; ϵ::Float64 = 1e-6)
     ee(p) = estimate_entropy(rand(Logarithmic(p), S))
 
     b_min = ee(ϵ)
@@ -64,8 +64,8 @@ function fit_entropy(h::Float64, S::Int; ϵ::Float64 = 1e-6)::Float64
     end
 end
 
-""" Fit a count distribution from a sorted histogram sample"""
-function fit_histogram(counts::AbstractVector{Int}; ϵ::Float64 = 1e-5)::DiscreteUnivariateDistribution
+"""Fit a count distribution from a sorted histogram sample."""
+function fit_histogram(counts::AbstractVector{Int}; ϵ::Float64 = 1e-5)
     # Validate input
     isempty(counts) && throw(CM.DataValidationError("counts cannot be empty"))
     any(<(0), counts) && throw(CM.DataValidationError("counts must be non-negative"))
@@ -105,7 +105,7 @@ function fit_histogram(counts::AbstractVector{Int}; ϵ::Float64 = 1e-5)::Discret
     end
 end
 
-function extract_marginal(row::AbstractVector{T}; exact::Bool = true)::DiscreteUnivariateDistribution where {T}
+function extract_marginal(row::AbstractVector{T}; exact::Bool = true) where {T}
     # Validate input
     isempty(row) && throw(CM.DataValidationError("row cannot be empty"))
     any(!isfinite, row) && throw(CM.DataValidationError("row contains non-finite values"))

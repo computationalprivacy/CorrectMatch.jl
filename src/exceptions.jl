@@ -49,3 +49,8 @@ struct NumericalInstabilityError <: CorrectMatchError
     operation::String
 end
 show(io::IO, e::NumericalInstabilityError) = print(io, "NumericalInstabilityError in ", e.operation, ": ", e.msg)
+
+function wrap_fitting_error(e::Exception, msg::String)
+    e isa CorrectMatchError && rethrow(e)
+    throw(ModelFittingError(msg, e))
+end

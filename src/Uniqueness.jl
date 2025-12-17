@@ -22,40 +22,31 @@ import ..CorrectMatch as CM
 
 using StatsBase
 
-function _inline_hash(x::AbstractVector{T}, h::UInt)::UInt where {T}
-    for i in eachindex(x)
+function _inline_hash(x::AbstractVector{T}, h::UInt) where {T}
+    @inbounds for i in eachindex(x)
         h = hash(x[i], h)
     end
     return h
 end
 
-function uniqueness_from_freqs(freqs::Base.ValueIterator, total_size::Int)::Float64
-    total_unique::Int = 0
-    for f in freqs
-        if f == 1
-            total_unique += 1
-        end
-    end
+function uniqueness_from_freqs(freqs, total_size::Int)
+    total_unique = count(==(1), freqs)
     return total_unique / total_size
 end
 
 """Calculate the empirical uniqueness of a vector of discrete values."""
-function uniqueness(data::AbstractVector{T})::Float64 where {T}
-    # Validate input data
+function uniqueness(data::AbstractVector{T}) where {T}
     CM.validate_discrete_data(data, "data")
-
-    N::Int = length(data)
+    N = length(data)
     freqs = values(countmap(data))
     return uniqueness_from_freqs(freqs, N)
 end
 
 """Calculate the empirical uniqueness of a matrix where each row represents a multivariate record."""
-function uniqueness(data::AbstractMatrix{T})::Float64 where {T}
-    # Validate input data
+function uniqueness(data::AbstractMatrix{T}) where {T}
     CM.validate_discrete_data(data, "data")
-
-    N::Int = size(data, 1)
-    freqs = values(countmap([_inline_hash(@view(data[i, :]), zero(UInt)) for i in 1:N]))
+    N = size(data, 1)
+    freqs = values(countmap([_inline_hash(@view(data[i, :]), zero(UInt)) for i in axes(data, 1)]))
     return uniqueness_from_freqs(freqs, N)
 end
 
