@@ -1,7 +1,7 @@
 # CorrectMatch
 
 [![Build status](https://github.com/computationalprivacy/CorrectMatch.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/computationalprivacy/CorrectMatch.jl/actions/workflows/CI.yml)
-
+[![version](https://juliahub.com/docs/General/CorrectMatch/stable/version.svg)](https://juliahub.com/ui/Packages/General/CorrectMatch)
 
 ## Installation
 
